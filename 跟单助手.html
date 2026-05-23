@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>旅游销售跟单助手</title>
+<style>
+:root {
+  --bg: #f5f6fa;
+  --card: #fff;
+  --primary: #4f6ef7;
+  --primary-light: #eef1ff;
+  --danger: #e74c3c;
+  --warning: #f39c12;
+  --success: #27ae60;
+  --text: #2c3e50;
+  --text-secondary: #7f8c8d;
+  --border: #e8ecf1;
+  --shadow: 0 2px 12px rgba(0,0,0,0.06);
+  --radius: 10px;
+  --transition: 0.2s ease;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; background:var(--bg); color:var(--text); line-height:1.6; }
+.app { max-width:1200px; margin:0 auto; padding:16px; }
+
+/* Header */
+.header { background:var(--card); padding:20px 24px; border-radius:var(--radius); box-shadow:var(--shadow); margin-bottom:20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; }
+.header h1 { font-size:22px; color:var(--primary); }
+.header-actions { display:flex; gap:8px; flex-wrap:wrap; }
+
+/* Tabs */
+.tabs { display:flex; gap:4px; background:var(--card); padding:4px; border-radius:var(--radius); margin-bottom:20px; box-shadow:var(--shadow); }
+.tab { flex:1; padding:10px 16px; border:none; background:none; border-radius:8px; cursor:pointer; font-size:14px; font-weight:500; color:var(--text-secondary); transition:var(--transition); white-space:nowrap; }
+.tab.active { background:var(--primary); color:#fff; }
+.tab:hover:not(.active) { background:var(--bg); }
+.tab .badge { display:inline-block; background:#fff; color:var(--primary); border-radius:10px; padding:1px 8px; font-size:12px; margin-left:6px; min-width:20px; text-align:center; }
+.tab.active .badge { background:rgba(255,255,255,0.3); color:#fff; }
+
+/* Cards */
+.card { background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow); padding:20px; margin-bottom:16px; }
+.card-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
+.card-header h3 { font-size:16px; }
+
+/* Stats Row */
+.stats-row { display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:12px; margin-bottom:20px; }
+.stat-card { background:var(--card); border-radius:var(--radius); padding:16px 20px; box-shadow:var(--shadow); }
+.stat-card .stat-num { font-size:28px; font-weight:700; }
+.stat-card .stat-label { font-size:12px; color:var(--text-secondary); margin-top:4px; }
+.stat-card.warn .stat-num { color:var(--warning); }
+.stat-card.danger .stat-num { color:var(--danger); }
+.stat-card.primary .stat-num { color:var(--primary); }
+.stat-card.success .stat-num { color:var(--success); }
+
+/* Buttons */
+.btn { padding:8px 16px; border:none; border-radius:6px; cursor:pointer; font-size:13px; font-weight:500; transition:var(--transition); display:inline-flex; align-items:center; gap:5px; white-space:nowrap; }
+.btn-primary { background:var(--primary); color:#fff; }
+.btn-primary:hover { opacity:0.9; }
+.btn-outline { background:#fff; color:var(--primary); border:1px solid var(--primary); }
+.btn-outline:hover { background:var(--primary-light); }
+.btn-danger { background:var(--danger); color:#fff; }
+.btn-danger:hover { opacity:0.9; }
+.btn-success { background:var(--success); color:#fff; }
+.btn-sm { padding:4px 10px; font-size:12px; }
+.btn-xs { padding:2px 8px; font-size:11px; border-radius:4px; }
+
+/* Form */
+.form-group { margin-bottom:14px; }
+.form-group label { display:block; font-size:13px; font-weight:500; margin-bottom:4px; color:var(--text-secondary); }
+.form-group input, .form-group select, .form-group textarea { width:100%; padding:9px 12px; border:1px solid var(--border); border-radius:6px; font-size:14px; font-family:inherit; transition:var(--transition); }
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline:none; border-color:var(--primary); box-shadow:0 0 0 3px rgba(79,110,247,0.1); }
+.form-group textarea { resize:vertical; min-height:72px; }
+.form-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+
+/* Status Badge */
+.status-badge { display:inline-block; padding:3px 10px; border-radius:12px; font-size:12px; font-weight:500; }
+.status-0 { background:#f0f0f0; color:#666; }
+.status-1 { background:#e3f2fd; color:#1976d2; }
+.status-2 { background:#e8f5e9; color:#2e7d32; }
+.status-3 { background:#fff3e0; color:#e65100; }
+.status-4 { background:#fce4ec; color:#c62828; }
+.status-5 { background:#e8f5e9; color:#1b5e20; }
+.status-6 { background:#e0f2f1; color:#00695c; }
+.status-7 { background:#ede7f6; color:#4527a0; }
+
+/* Customer List */
+.customer-table { width:100%; border-collapse:collapse; font-size:13px; }
+.customer-table th { text-align:left; padding:10px 12px; border-bottom:2px solid var(--border); font-size:12px; color:var(--text-secondary); font-weight:600; white-space:nowrap; }
+.customer-table td { padding:10px 12px; border-bottom:1px solid var(--border); vertical-align:middle; }
+.customer-table tr { cursor:pointer; transition:var(--transition); }
+.customer-table tr:hover { background:#fafbfc; }
+.customer-table .actions { display:flex; gap:4px; flex-wrap:wrap; }
+
+/* Follow-up Alert */
+.alert-row { display:flex; align-items:center; gap:10px; padding:12px 16px; background:#fff8e1; border-left:4px solid var(--warning); border-radius:6px; margin-bottom:8px; font-size:13px; }
+.alert-row.urgent { background:#ffeaea; border-left-color:var(--danger); }
+.alert-row .alert-time { font-weight:600; color:var(--warning); min-width:60px; }
+.alert-row.urgent .alert-time { color:var(--danger); }
+
+/* Modal */
+.modal-overlay { position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.4); display:flex; align-items:center; justify-content:center; z-index:100; padding:20px; }
+.modal { background:#fff; border-radius:14px; padding:28px; max-width:560px; width:100%; max-height:90vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,0.2); }
+.modal h2 { margin-bottom:20px; font-size:18px; }
+
+/* Script Cards */
+.script-card { border:1px solid var(--border); border-radius:8px; padding:14px; margin-bottom:10px; cursor:pointer; transition:var(--transition); }
+.script-card:hover { border-color:var(--primary); background:var(--primary-light); }
+.script-card .script-stage { font-size:11px; color:var(--primary); font-weight:600; margin-bottom:4px; text-transform:uppercase; }
+.script-card .script-title { font-weight:600; margin-bottom:6px; }
+.script-card .script-body { font-size:13px; color:var(--text-secondary); background:#f9fafb; padding:10px; border-radius:6px; border-left:3px solid var(--primary); }
+
+/* Timeline */
+.timeline { position:relative; padding-left:24px; }
+.timeline::before { content:''; position:absolute; left:8px; top:4px; bottom:4px; width:2px; background:var(--border); }
+.timeline-item { position:relative; margin-bottom:20px; }
+.timeline-item::before { content:''; position:absolute; left:-20px; top:4px; width:12px; height:12px; border-radius:50%; background:var(--primary); border:3px solid #fff; box-shadow:0 0 0 2px var(--primary); }
+.timeline-item.done::before { background:var(--success); box-shadow:0 0 0 2px var(--success); }
+.timeline-item.missed::before { background:var(--danger); box-shadow:0 0 0 2px var(--danger); }
+.timeline-date { font-size:11px; color:var(--text-secondary); }
+.timeline-action { font-weight:500; margin:2px 0; }
+.timeline-note { font-size:12px; color:var(--text-secondary); }
+
+/* Responsive */
+@media (max-width:768px) {
+  .form-row { grid-template-columns:1fr; }
+  .customer-table { font-size:11px; }
+  .customer-table th, .customer-table td { padding:6px 4px; }
+  .tabs { overflow-x:auto; }
+}
+
+/* Empty State */
+.empty-state { text-align:center; padding:40px 20px; color:var(--text-secondary); }
+.empty-state .icon { font-size:48px; margin-bottom:12px; }
+
+/* Quick Action */
+.quick-actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; }
+
+/* Toast */
+.toast { position:fixed; top:20px; right:20px; padding:12px 20px; border-radius:8px; color:#fff; font-size:14px; z-index:200; animation:slideIn 0.3s ease; }
+.toast.success { background:var(--success); }
+.toast.error { background:var(--danger); }
+@keyframes slideIn { from { opacity:0; transform:translateX(20px); } to { opacity:1; transform:translateX(0); } }
+
+.copy-btn { cursor:pointer; color:var(--primary); font-size:12px; border:none; background:none; }
+.copy-btn:hover { text-decoration:underline; }
+</style>
+</head>
+<body>
+
+<div class="app" id="app"></div>
+
+<div id="modal-container"></div>
+<div id="toast-container"></div>
+
+<script>
+// ============ 数据层 ============
+const STORAGE_KEY = 'travel_crm_data';
+const STATUS_MAP = [
+  { id:0, label:'新下单', color:'status-0', icon:'📥' },
+  { id:1, label:'已首次联系', color:'status-1', icon:'📞' },
+  { id:2, label:'需求已挖掘', color:'status-2', icon:'🔍' },
+  { id:3, label:'已付定金', color:'status-3', icon:'💰' },
+  { id:4, label:'方案已发', color:'status-4', icon:'📋' },
+  { id:5, label:'已签约', color:'status-5', icon:'✅' },
+  { id:6, label:'已出行', color:'status-6', icon:'✈️' },
+  { id:7, label:'已回访', color:'status-7', icon:'💬' },
+];
+
+// 每个状态对应的建议跟单动作和时间窗口
+const FOLLOWUP_RULES = {
+  0: { nextStatus:1, windowHours:0.5, action:'黄金30分钟：立即添加微信 + 发送专属顾问自我介绍', urgent:true },
+  1: { nextStatus:2, windowHours:48, action:'预约一次10-15分钟需求发现电话', urgent:false },
+  2: { nextStatus:3, windowHours:24, action:'需求挖掘后24小时内：发送定制方案框架 + 引导付定金锁价', urgent:false },
+  3: { nextStatus:4, windowHours:72, action:'付定金后72小时内：发送详细行程方案', urgent:false },
+  4: { nextStatus:5, windowHours:48, action:'方案发出48小时内：跟进方案反馈，促成签约', urgent:true },
+  5: { nextStatus:6, windowHours:null, action:'签约后服务：出行前1周发送打包清单+天气+行程预览', urgent:false },
+  6: { nextStatus:7, windowHours:336, action:'归来后2周（14天）：回访体验 + 邀请评价 + 轻问复购', urgent:false },
+  7: { nextStatus:null, windowHours:null, action:'长期维护：节假日问候 + 旺季推送', urgent:false },
+};
+
+// 话术库
+const SCRIPTS = [
+  { stage:'新下单-30分钟', title:'首次联系（不加压力）', body:'[客户称呼]，刚看到您下单了[目的地]的线路～先不急着定时间哈。就是想跟您说一下，您选的这条线路最近有几个出发日期性价比特别高，我帮您留意着。您方便的时候随时跟我说就行，我是您这条线的专属顾问[你的名字]。' },
+  { stage:'新下单-30分钟', title:'语音自报家门', body:'[客户称呼]您好，我是[你的名字]，您的专属旅行顾问。从今天起到您出行回来，全程由我一个人对接。您有任何问题直接找我，不用去直播间问了，那边人多我担心漏掉您的消息。我在系统里帮您备注好了，后续服务都转到我这边来。' },
+  { stage:'需求挖掘', title:'开放式提问-了解偏好', body:'请问这次旅行是家庭出游、朋友结伴，还是想给自己一段放松的时光呢？' },
+  { stage:'需求挖掘', title:'唤起情感记忆', body:'您上一次出去玩是什么时候呀？那次有没有什么特别喜欢的、或者不太满意的？' },
+  { stage:'需求挖掘', title:'挖掘隐性需求', body:'这次旅行有没有什么特别要庆祝的事？比如纪念日、生日之类的～' },
+  { stage:'需求挖掘', title:'忘记预算-挖真实期待', body:'暂时先不考虑预算，您理想中这趟旅行长什么样？住什么样的地方？最想体验什么？' },
+  { stage:'引导定金', title:'锁定意向收定金', body:'[客户称呼]，接下来我会根据您的需求，专门花时间给您定制一份详细方案。咱们先锁定一个定金名额，这样我出方案里的优惠价格和房型都能帮您锁定，不做的话定金随时可以退，您放心。' },
+  { stage:'方案呈现', title:'讲故事-FAB话术', body:'结合您想要[客户需求]的想法，我帮您这样安排：前两晚住[特色住宿]，早上推开窗就能看到[特色景观]，[独特体验细节]。这个住宿是我们花了半年谈下来的独家资源，别的渠道拿不到，而且比您自己订便宜[金额]～' },
+  { stage:'促成签约', title:'给选择题不给填空题', body:'姐/哥，我刚查了一下，下月[日期A]和[日期B]两个团，住宿免费升级了[升级内容]，不加价。您看这两个日期哪个更方便？这个升级名额不多，我先帮您占个位？' },
+  { stage:'沉默激活', title:'实拍素材激活', body:'[客户称呼]，这是昨天出发的团刚发回来的实拍，天气太好了！给您感受一下～[发照片/视频]' },
+  { stage:'沉默激活', title:'价值信息激活', body:'[客户称呼]，刚接到航司通知，下个月这条线的燃油附加费要涨[金额]，您这边如果定下来的话，我帮您锁定现在的价格，能省一笔～' },
+  { stage:'沉默激活', title:'限时限量激活', body:'[客户称呼]，跟您说一下，您之前看中的那个[房型/线路]只剩最后几个名额了，我帮您预留到[时间点]？' },
+  { stage:'异议处理', title:'价格异议-共情转化', body:'您对价格的顾虑我完全理解。不过这个方案的核心价值在于"体验的独占性"：[独家资源描述]。如果觉得某些环节可以调整，我帮您重新优化一下，比如把[某高端项目]换成[性价比替代]，能省不少但核心体验还在～' },
+  { stage:'签约后', title:'出行前一周关怀', body:'[客户称呼]，您[日期]的[目的地]行程马上就要出发啦！我帮您整理好了：①打包清单 ②当地天气 ③行程预览 ④我的24小时联系电话。有任何问题随时找我，提前祝您旅途愉快！' },
+  { stage:'归来回访', title:'两周后回访', body:'[客户称呼]，欢迎回家！上次[目的地]玩得怎么样？有没有什么特别难忘的瞬间？方便的话帮我写两句话的评价，下次您出行我给您额外优惠。对了，下次想去哪里呀？😊' },
+];
+
+let appData = { customers:[], nextId:1 };
+
+function loadData() {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (raw) { try { appData = JSON.parse(raw); } catch(e) {} }
+}
+function saveData() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
+}
+
+// ============ 辅助函数 ============
+function formatDate(ts) { if(!ts) return ''; const d=new Date(ts); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; }
+function formatDateShort(ts) { if(!ts) return ''; const d=new Date(ts); return `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; }
+function timeSince(ts) { if(!ts) return ''; const diff=Date.now()-ts; const m=Math.floor(diff/60000); if(m<60) return `${m}分钟前`; const h=Math.floor(m/60); if(h<24) return `${h}小时前`; const d=Math.floor(h/24); return `${d}天前`; }
+function getStatus(c) { return STATUS_MAP.find(s=>s.id===c.status) || STATUS_MAP[0]; }
+function getFollowupRule(status) { return FOLLOWUP_RULES[status] || null; }
+function getOverdue(c) {
+  const rule = FOLLOWUP_RULES[c.status];
+  if (!rule || !rule.windowHours) return null;
+  if (!c.lastActionTime) return rule.windowHours <= 0.5 ? 'urgent' : 'pending';
+  const deadline = c.lastActionTime + rule.windowHours * 3600000;
+  if (Date.now() > deadline) return 'overdue';
+  if (Date.now() > deadline - 3600000) return 'urgent';
+  return 'ok';
+}
+
+function toast(msg, type='success') {
+  const el = document.createElement('div'); el.className=`toast ${type}`; el.textContent=msg;
+  document.getElementById('toast-container').appendChild(el);
+  setTimeout(()=>el.remove(), 2500);
+}
+
+// ============ 渲染引擎 ============
+let currentTab = 'dashboard';
+let editCustomerId = null;
+
+function render() {
+  const app = document.getElementById('app');
+  app.innerHTML = `
+    <div class="header">
+      <h1>🏖️ 旅游销售跟单助手</h1>
+      <div class="header-actions">
+        <button class="btn btn-primary" onclick="showAddCustomer()">+ 添加客户</button>
+        <button class="btn btn-outline" onclick="exportData()">📤 导出数据</button>
+        <button class="btn btn-outline" onclick="document.getElementById('import-file').click()">📥 导入数据</button>
+        <input type="file" id="import-file" style="display:none" accept=".json" onchange="importData(event)">
+        <button class="btn btn-outline btn-sm" onclick="resetDemo()">🔄 加载演示数据</button>
+      </div>
+    </div>
+    <div class="tabs">
+      <button class="tab ${currentTab==='dashboard'?'active':''}" onclick="switchTab('dashboard')">📊 今日待办<span class="badge">${getPendingCount()}</span></button>
+      <button class="tab ${currentTab==='customers'?'active':''}" onclick="switchTab('customers')">👥 全部客户<span class="badge">${appData.customers.length}</span></button>
+      <button class="tab ${currentTab==='scripts'?'active':''}" onclick="switchTab('scripts')">📝 话术库</button>
+      <button class="tab ${currentTab==='stats'?'active':''}" onclick="switchTab('stats')">📈 数据看板</button>
+    </div>
+    <div id="tab-content">${renderTabContent()}</div>
+  `;
+}
+
+function getPendingCount() {
+  return appData.customers.filter(c=>{
+    const ov = getOverdue(c);
+    return ov==='overdue' || ov==='urgent';
+  }).length;
+}
+
+function renderTabContent() {
+  switch(currentTab) {
+    case 'dashboard': return renderDashboard();
+    case 'customers': return renderCustomerList();
+    case 'scripts': return renderScripts();
+    case 'stats': return renderStats();
+    default: return '';
+  }
+}
+
+// ============ Dashboard ============
+function renderDashboard() {
+  const today = new Date();
+  const alerts = [];
+  const recentCustomers = [...appData.customers].sort((a,b)=>b.createdAt - a.createdAt);
+
+  appData.customers.forEach(c=>{
+    const ov = getOverdue(c);
+    const rule = getFollowupRule(c.status);
+    if ((ov==='overdue' || ov==='urgent') && rule) {
+      alerts.push({ customer:c, overdue:ov, rule:rule, lastAction:c.lastActionTime });
+    }
+  });
+
+  // Sort: urgent first, then overdue
+  alerts.sort((a,b)=>{
+    if(a.overdue==='urgent' && b.overdue!=='urgent') return -1;
+    if(a.overdue!=='urgent' && b.overdue==='urgent') return 1;
+    return 0;
+  });
+
+  const statsData = computeStats();
+
+  return `
+    <div class="stats-row">
+      <div class="stat-card primary"><div class="stat-num">${appData.customers.length}</div><div class="stat-label">全部客户</div></div>
+      <div class="stat-card warn"><div class="stat-num">${alerts.length}</div><div class="stat-label">待跟进提醒</div></div>
+      <div class="stat-card success"><div class="stat-num">${statsData.converted}</div><div class="stat-label">已签约</div></div>
+      <div class="stat-card"><div class="stat-num" style="color:${statsData.rate>=30?'var(--success)':'var(--warning)'}">${statsData.rate}%</div><div class="stat-label">转化率（签约/联系）</div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h3>🔔 跟单提醒 ${alerts.length>0?`<span style="color:var(--danger);font-size:14px">(${alerts.length}条待处理)</span>`:''}</h3>
+      </div>
+      ${alerts.length===0 ? `<div class="empty-state"><div class="icon">🎉</div><p>暂无待跟进提醒，继续保持！</p></div>` : alerts.map(a=>`
+        <div class="alert-row ${a.overdue==='urgent'?'urgent':''}">
+          <div class="alert-time">${a.overdue==='urgent'?'⚠️紧急':'⏰超时'}</div>
+          <div style="flex:1">
+            <strong>${a.customer.name}</strong> · ${getStatus(a.customer).label} · ${a.customer.destination||'未填写目的地'}
+            <div style="font-size:12px;color:var(--text-secondary);margin-top:2px">${a.rule.action}</div>
+            ${a.lastAction ? `<div style="font-size:11px;color:var(--text-secondary)">上次操作：${timeSince(a.lastAction)}</div>` : '<div style="font-size:11px;color:var(--danger)">尚未联系！</div>'}
+          </div>
+          <div class="quick-actions">
+            <button class="btn btn-primary btn-sm" onclick="quickAction(${a.customer.id})">处理</button>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+
+    <div class="card">
+      <div class="card-header"><h3>📋 最近添加的客户</h3></div>
+      ${recentCustomers.length===0 ? `<div class="empty-state"><div class="icon">📭</div><p>还没有客户，点击右上角"添加客户"开始</p></div>` : `
+        <table class="customer-table">
+          <thead><tr><th>客户</th><th>目的地</th><th>状态</th><th>来源</th><th>添加时间</th><th></th></tr></thead>
+          <tbody>${recentCustomers.slice(0,10).map(c=>`
+            <tr onclick="showCustomerDetail(${c.id})">
+              <td><strong>${c.name}</strong>${c.phone?`<br><span style="font-size:11px;color:var(--text-secondary)">${c.phone}</span>`:''}</td>
+              <td>${c.destination||'-'}</td>
+              <td><span class="status-badge ${getStatus(c).color}">${getStatus(c).label}</span></td>
+              <td>${c.source||'抖音直播'}</td>
+              <td>${timeSince(c.createdAt)}</td>
+              <td class="actions"><button class="btn btn-outline btn-xs" onclick="event.stopPropagation();quickAction(${c.id})">操作</button></td>
+            </tr>
+          `).join('')}</tbody>
+        </table>
+      `}
+    </div>
+  `;
+}
+
+// ============ Customer List ============
+function renderCustomerList() {
+  const filterStatus = getUrlFilter();
+  let customers = [...appData.customers];
+  if (filterStatus !== null && filterStatus !== 'all') {
+    customers = customers.filter(c=>c.status === parseInt(filterStatus));
+  }
+  customers.sort((a,b)=>b.createdAt - a.createdAt);
+
+  const statusFilterHtml = STATUS_MAP.map(s=>
+    `<button class="btn btn-xs ${filterStatus===String(s.id)?'btn-primary':filterStatus===null||filterStatus==='all'?'btn-outline':''}" onclick="switchTab('customers',${s.id})" style="margin:2px">${s.label}</button>`
+  ).join('');
+
+  return `
+    <div class="card">
+      <div style="margin-bottom:12px">
+        <span style="font-size:13px;color:var(--text-secondary);margin-right:8px">筛选状态：</span>
+        <button class="btn btn-xs ${!filterStatus||filterStatus==='all'?'btn-primary':'btn-outline'}" onclick="switchTab('customers','all')" style="margin:2px">全部</button>
+        ${statusFilterHtml}
+      </div>
+      ${customers.length===0 ? `<div class="empty-state"><div class="icon">📭</div><p>暂无匹配客户</p></div>` : `
+        <table class="customer-table">
+          <thead><tr><th>客户</th><th>微信/手机</th><th>目的地</th><th>状态</th><th>来源</th><th>最近跟进</th><th>操作</th></tr></thead>
+          <tbody>${customers.map(c=>`
+            <tr onclick="showCustomerDetail(${c.id})">
+              <td><strong>${c.name}</strong></td>
+              <td>${c.wechat||c.phone||'-'}</td>
+              <td>${c.destination||'-'}</td>
+              <td><span class="status-badge ${getStatus(c).color}">${getStatus(c).label}</span></td>
+              <td>${c.source||'抖音直播'}</td>
+              <td>${c.lastActionTime?timeSince(c.lastActionTime):'<span style="color:var(--danger)">未联系</span>'}</td>
+              <td class="actions" onclick="event.stopPropagation()">
+                <button class="btn btn-primary btn-xs" onclick="quickAction(${c.id})">跟进</button>
+                <button class="btn btn-outline btn-xs" onclick="editCustomer(${c.id})">编辑</button>
+                <button class="btn btn-danger btn-xs" onclick="deleteCustomer(${c.id})">删除</button>
+              </td>
+            </tr>
+          `).join('')}</tbody>
+        </table>
+      `}
+    </div>
+  `;
+}
+
+// ============ Scripts ============
+function renderScripts() {
+  const stages = [...new Set(SCRIPTS.map(s=>s.stage))];
+  return `
+    <div class="card">
+      <div class="card-header"><h3>📝 跟单话术模板库</h3></div>
+      ${stages.map(stage=>`
+        <h4 style="margin:16px 0 8px;color:var(--primary);font-size:14px">📌 ${stage}</h4>
+        ${SCRIPTS.filter(s=>s.stage===stage).map(s=>`
+          <div class="script-card" onclick="copyScript('${s.body.replace(/'/g,"\\'")}')">
+            <div class="script-title">${s.title} <button class="copy-btn" onclick="event.stopPropagation();copyScript('${s.body.replace(/'/g,"\\'")}')">📋 复制</button></div>
+            <div class="script-body">${s.body}</div>
+          </div>
+        `).join('')}
+      `).join('')}
+    </div>
+  `;
+}
+
+// ============ Stats ============
+function renderStats() {
+  const s = computeStats();
+  return `
+    <div class="stats-row">
+      <div class="stat-card primary"><div class="stat-num">${appData.customers.length}</div><div class="stat-label">客户总数</div></div>
+      <div class="stat-card"><div class="stat-num">${s.newOrders}</div><div class="stat-label">新下单（待联系）</div></div>
+      <div class="stat-card"><div class="stat-num">${s.contacted}</div><div class="stat-label">已联系</div></div>
+      <div class="stat-card"><div class="stat-num">${s.deposited}</div><div class="stat-label">已付定金</div></div>
+      <div class="stat-card success"><div class="stat-num">${s.converted}</div><div class="stat-label">已签约</div></div>
+      <div class="stat-card"><div class="stat-num">${s.traveled}</div><div class="stat-label">已出行</div></div>
+      <div class="stat-card warn"><div class="stat-num">${s.rate}%</div><div class="stat-label">转化率</div></div>
+      <div class="stat-card"><div class="stat-num">${s.avgDays}</div><div class="stat-label">平均成交周期（天）</div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><h3>📊 销售漏斗</h3></div>
+      <div style="margin-top:12px">
+        ${STATUS_MAP.slice(0,8).map((st,i)=>{
+          const count = appData.customers.filter(c=>c.status===st.id).length;
+          const maxW = appData.customers.length>0 ? Math.max(5, (count/appData.customers.length)*100) : 0;
+          return `
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;font-size:13px">
+              <span style="width:100px;text-align:right">${st.icon} ${st.label}</span>
+              <div style="flex:1;background:var(--bg);border-radius:6px;height:28px;overflow:hidden">
+                <div style="height:100%;width:${maxW}%;background:${i<=2?'#e0e0e0':i<=4?'#ffc107':i<=5?'#4f6ef7':'#27ae60'};border-radius:6px;display:flex;align-items:center;padding-left:10px;font-weight:600;font-size:12px;color:#fff;min-width:${count>0?'40px':'0'}">${count>0?count:''}</div>
+              </div>
+              <span style="width:40px;color:var(--text-secondary)">${count}人</span>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><h3>🎯 目的地分布</h3></div>
+      ${(()=>{
+        const destMap = {};
+        appData.customers.forEach(c=>{ const d=c.destination||'未填写'; destMap[d]=(destMap[d]||0)+1; });
+        const sorted = Object.entries(destMap).sort((a,b)=>b[1]-a[1]);
+        if(sorted.length===0) return '<div class="empty-state"><p>暂无数据</p></div>';
+        const max = sorted[0][1];
+        return sorted.map(([dest,count])=>`
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;font-size:13px">
+            <span style="width:80px;text-align:right">${dest}</span>
+            <div style="flex:1;background:var(--bg);border-radius:4px;height:22px;overflow:hidden">
+              <div style="height:100%;width:${Math.max(5,(count/max)*100)}%;background:var(--primary);border-radius:4px;display:flex;align-items:center;padding-left:8px;font-size:11px;color:#fff;font-weight:500">${count}</div>
+            </div>
+            <span style="width:40px;color:var(--text-secondary);font-size:12px">${Math.round(count/appData.customers.length*100)}%</span>
+          </div>
+        `).join('');
+      })()}
+    </div>
+  `;
+}
+
+function computeStats() {
+  const total = appData.customers.length;
+  const newOrders = appData.customers.filter(c=>c.status===0).length;
+  const contacted = appData.customers.filter(c=>c.status>=1).length;
+  const deposited = appData.customers.filter(c=>c.status>=3).length;
+  const converted = appData.customers.filter(c=>c.status>=5).length;
+  const traveled = appData.customers.filter(c=>c.status>=6).length;
+  const rate = contacted>0 ? Math.round(converted/contacted*100) : 0;
+  // avg conversion days for converted customers
+  const convertedCustomers = appData.customers.filter(c=>c.status>=5 && c.convertedAt);
+  let avgDays = 0;
+  if (convertedCustomers.length>0) {
+    avgDays = Math.round(convertedCustomers.reduce((sum,c)=>sum+(c.convertedAt-c.createdAt)/86400000, 0) / convertedCustomers.length);
+  }
+  return { total, newOrders, contacted, deposited, converted, traveled, rate, avgDays };
+}
+
+// ============ Actions ============
+function switchTab(tab, filter) {
+  currentTab = tab;
+  if (filter !== undefined) {
+    window.location.hash = `#customers-${filter}`;
+  } else {
+    window.location.hash = tab;
+  }
+  render();
+}
+function getUrlFilter() {
+  const hash = window.location.hash.replace('#','');
+  if (hash.startsWith('customers-')) return hash.replace('customers-','');
+  return null;
+}
+
+function showAddCustomer() {
+  editCustomerId = null;
+  showCustomerModal(null);
+}
+
+function editCustomer(id) {
+  editCustomerId = id;
+  const c = appData.customers.find(x=>x.id===id);
+  showCustomerModal(c);
+}
+
+function showCustomerModal(c) {
+  const modal = document.getElementById('modal-container');
+  const isEdit = !!c;
+  modal.innerHTML = `
+    <div class="modal-overlay" onclick="if(event.target===this)closeModal()">
+      <div class="modal">
+        <h2>${isEdit?'编辑客户':'添加新客户'}</h2>
+        <form onsubmit="saveCustomer(event,${isEdit?c.id:null})">
+          <div class="form-row">
+            <div class="form-group">
+              <label>客户姓名/昵称 *</label>
+              <input type="text" id="cust-name" value="${c?.name||''}" required placeholder="如：王哥、李女士">
+            </div>
+            <div class="form-group">
+              <label>手机号</label>
+              <input type="text" id="cust-phone" value="${c?.phone||''}" placeholder="手机号">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>微信号</label>
+              <input type="text" id="cust-wechat" value="${c?.wechat||''}" placeholder="微信号">
+            </div>
+            <div class="form-group">
+              <label>意向目的地</label>
+              <input type="text" id="cust-dest" value="${c?.destination||''}" placeholder="如：三亚、云南、日本">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>客户来源</label>
+              <select id="cust-source">
+                <option value="抖音直播" ${c?.source==='抖音直播'||!c?'selected':''}>抖音直播</option>
+                <option value="抖音短视频" ${c?.source==='抖音短视频'?'selected':''}>抖音短视频</option>
+                <option value="微信转介绍" ${c?.source==='微信转介绍'?'selected':''}>微信转介绍</option>
+                <option value="老客户复购" ${c?.source==='老客户复购'?'selected':''}>老客户复购</option>
+                <option value="其他" ${c?.source==='其他'?'selected':''}>其他</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>当前状态</label>
+              <select id="cust-status">
+                ${STATUS_MAP.map(s=>`<option value="${s.id}" ${(c?.status===s.id)?'selected':(s.id===0&&!c)?'selected':''}>${s.icon} ${s.label}</option>`).join('')}
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>备注</label>
+            <textarea id="cust-note" placeholder="客户特殊需求、偏好、注意事项...">${c?.note||''}</textarea>
+          </div>
+          <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">
+            <button type="button" class="btn btn-outline" onclick="closeModal()">取消</button>
+            <button type="submit" class="btn btn-primary">${isEdit?'保存修改':'添加客户'}</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  `;
+}
+
+function saveCustomer(e, id) {
+  e.preventDefault();
+  const data = {
+    name: document.getElementById('cust-name').value.trim(),
+    phone: document.getElementById('cust-phone').value.trim(),
+    wechat: document.getElementById('cust-wechat').value.trim(),
+    destination: document.getElementById('cust-dest').value.trim(),
+    source: document.getElementById('cust-source').value,
+    status: parseInt(document.getElementById('cust-status').value),
+    note: document.getElementById('cust-note').value.trim(),
+  };
+  if (!data.name) return;
+  const now = Date.now();
+
+  if (id) {
+    const c = appData.customers.find(x=>x.id===id);
+    if (!c) return;
+    const oldStatus = c.status;
+    Object.assign(c, data);
+    if (oldStatus !== data.status) {
+      c.lastActionTime = now;
+      addHistory(c, `状态变更：${STATUS_MAP.find(s=>s.id===oldStatus)?.label} → ${getStatus(c).label}`);
+    }
+    if (data.status === 5 && !c.convertedAt) c.convertedAt = now;
+  } else {
+    const customer = { id:appData.nextId++, ...data, createdAt:now, lastActionTime:null, convertedAt:null, history:[], followupNote:'' };
+    if (data.status >= 1) customer.lastActionTime = now;
+    if (data.status >= 5) customer.convertedAt = now;
+    addHistory(customer, '客户创建');
+    appData.customers.push(customer);
+  }
+  saveData();
+  closeModal();
+  render();
+  toast(id?'客户信息已更新':'客户添加成功！');
+}
+
+function deleteCustomer(id) {
+  if (!confirm('确定要删除这个客户吗？此操作不可恢复。')) return;
+  appData.customers = appData.customers.filter(c=>c.id!==id);
+  saveData();
+  render();
+  toast('客户已删除');
+}
+
+function quickAction(id) {
+  const c = appData.customers.find(x=>x.id===id);
+  if (!c) return;
+  const rule = getFollowupRule(c.status);
+  const modal = document.getElementById('modal-container');
+  const nextStatus = rule?.nextStatus;
+  const nextStatusLabel = nextStatus!==null&&nextStatus!==undefined ? STATUS_MAP.find(s=>s.id===nextStatus)?.label : '';
+
+  modal.innerHTML = `
+    <div class="modal-overlay" onclick="if(event.target===this)closeModal()">
+      <div class="modal">
+        <h2>跟进：${c.name}</h2>
+        <div style="margin-bottom:16px;padding:12px;background:var(--bg);border-radius:8px">
+          <div style="font-size:13px"><strong>当前状态：</strong><span class="status-badge ${getStatus(c).color}">${getStatus(c).label}</span></div>
+          <div style="font-size:13px;margin-top:4px"><strong>目的地：</strong>${c.destination||'未填写'}</div>
+          <div style="font-size:13px;margin-top:4px"><strong>来源：</strong>${c.source||'抖音直播'}</div>
+          ${c.note?`<div style="font-size:13px;margin-top:4px"><strong>备注：</strong>${c.note}</div>`:''}
+          ${rule?`<div style="font-size:13px;margin-top:8px;color:var(--primary);font-weight:500">📌 建议动作：${rule.action}</div>`:''}
+        </div>
+
+        ${rule?.nextStatus!==null&&rule?.nextStatus!==undefined ? `
+        <div class="form-group">
+          <label>更新状态到：<strong>${nextStatusLabel}</strong></label>
+          <input type="checkbox" id="update-status" checked style="margin-right:6px">
+          <label for="update-status" style="display:inline;font-size:13px">完成此步骤，推进到下一阶段</label>
+        </div>
+        ` : ''}
+
+        <div class="form-group">
+          <label>跟进备注</label>
+          <textarea id="followup-note" placeholder="记录本次跟进的内容、顾客反馈等...">${c.followupNote||''}</textarea>
+        </div>
+
+        <div style="margin-bottom:12px">
+          <label style="font-size:12px;color:var(--text-secondary)">快捷话术：</label>
+          <div class="quick-actions">
+            ${getRelevantScripts(c.status).map((s,i)=>`
+              <button class="btn btn-outline btn-sm" onclick="copyScript('${s.body.replace(/'/g,"\\'")}')">📋 ${s.title}</button>
+            `).join('')}
+          </div>
+        </div>
+
+        <div style="display:flex;gap:8px;justify-content:flex-end">
+          <button type="button" class="btn btn-outline" onclick="closeModal()">关闭</button>
+          <button type="button" class="btn btn-primary" onclick="saveFollowup(${c.id})">保存跟进记录</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function getRelevantScripts(status) {
+  const stageMap = {
+    0: '新下单-30分钟',
+    1: '需求挖掘',
+    2: '引导定金',
+    3: '方案呈现',
+    4: '促成签约',
+    5: '签约后',
+    6: '归来回访',
+    7: '归来回访',
+  };
+  const target = stageMap[status] || '';
+  return SCRIPTS.filter(s=>s.stage===target);
+}
+
+function saveFollowup(id) {
+  const c = appData.customers.find(x=>x.id===id);
+  if (!c) return;
+  const note = document.getElementById('followup-note').value.trim();
+  const updateStatus = document.getElementById('update-status')?.checked;
+
+  c.lastActionTime = Date.now();
+  if (note) {
+    addHistory(c, `跟进记录：${note}`);
+    c.followupNote = '';
+  }
+  if (updateStatus) {
+    const rule = getFollowupRule(c.status);
+    if (rule && rule.nextStatus !== null && rule.nextStatus !== undefined) {
+      const oldStatus = c.status;
+      c.status = rule.nextStatus;
+      if (c.status >= 5 && !c.convertedAt) c.convertedAt = Date.now();
+      addHistory(c, `状态更新：${STATUS_MAP.find(s=>s.id===oldStatus)?.label} → ${getStatus(c).label}`);
+    }
+  }
+  saveData();
+  closeModal();
+  render();
+  toast('跟进记录已保存！');
+}
+
+function showCustomerDetail(id) {
+  const c = appData.customers.find(x=>x.id===id);
+  if (!c) return;
+  const modal = document.getElementById('modal-container');
+
+  modal.innerHTML = `
+    <div class="modal-overlay" onclick="if(event.target===this)closeModal()">
+      <div class="modal" style="max-width:640px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+          <h2>${c.name} <span class="status-badge ${getStatus(c).color}" style="font-size:12px">${getStatus(c).label}</span></h2>
+          <div style="display:flex;gap:6px">
+            <button class="btn btn-outline btn-sm" onclick="closeModal();editCustomer(${c.id})">编辑</button>
+            <button class="btn btn-primary btn-sm" onclick="closeModal();quickAction(${c.id})">跟进</button>
+            <button class="btn btn-danger btn-sm" onclick="closeModal();deleteCustomer(${c.id})">删除</button>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 20px;margin-bottom:16px;font-size:13px">
+          <div>📱 手机：${c.phone||'未填写'}</div>
+          <div>💬 微信：${c.wechat||'未填写'}</div>
+          <div>🏖️ 目的地：${c.destination||'未填写'}</div>
+          <div>📥 来源：${c.source||'抖音直播'}</div>
+          <div>📅 添加时间：${formatDate(c.createdAt)}</div>
+          <div>🕐 最近跟进：${c.lastActionTime?formatDate(c.lastActionTime):'未跟进'}</div>
+          ${c.convertedAt?`<div>✅ 成交时间：${formatDate(c.convertedAt)}</div>`:''}
+          ${c.convertedAt?`<div>⏱️ 成交周期：${Math.round((c.convertedAt-c.createdAt)/86400000)}天</div>`:''}
+        </div>
+
+        ${c.note?`<div style="padding:10px;background:#fff8e1;border-radius:6px;font-size:13px;margin-bottom:16px"><strong>备注：</strong>${c.note}</div>`:''}
+
+        <h4 style="margin-bottom:8px;font-size:14px">📝 跟进历史</h4>
+        ${!c.history||c.history.length===0?`<div style="font-size:13px;color:var(--text-secondary);text-align:center;padding:20px">暂无跟进记录</div>`:`
+          <div class="timeline">
+            ${c.history.slice().reverse().map(h=>`
+              <div class="timeline-item done">
+                <div class="timeline-date">${formatDate(h.time)}</div>
+                <div class="timeline-action">${h.content}</div>
+              </div>
+            `).join('')}
+          </div>
+        `}
+
+        <div style="text-align:right;margin-top:16px">
+          <button class="btn btn-outline" onclick="closeModal()">关闭</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function addHistory(c, content) {
+  if (!c.history) c.history = [];
+  c.history.push({ time:Date.now(), content });
+}
+
+function closeModal() {
+  document.getElementById('modal-container').innerHTML = '';
+}
+
+function copyScript(text) {
+  navigator.clipboard.writeText(text).then(()=>toast('话术已复制到剪贴板！')).catch(()=>toast('复制失败，请手动复制','error'));
+}
+
+// ============ Import/Export ============
+function exportData() {
+  const blob = new Blob([JSON.stringify(appData, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href=url; a.download=`旅游跟单数据_${new Date().toISOString().slice(0,10)}.json`; a.click();
+  URL.revokeObjectURL(url);
+  toast('数据导出成功！');
+}
+
+function importData(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(ev) {
+    try {
+      const data = JSON.parse(ev.target.result);
+      if (!data.customers || !data.nextId) throw new Error('数据格式不正确');
+      if (!confirm(`即将导入 ${data.customers.length} 条客户数据，会覆盖当前数据。确定继续？`)) return;
+      appData = data;
+      saveData();
+      render();
+      toast(`成功导入 ${data.customers.length} 条数据！`);
+    } catch(err) {
+      toast('导入失败：' + err.message, 'error');
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+}
+
+// ============ Demo Data ============
+function resetDemo() {
+  if (appData.customers.length>0 && !confirm('加载演示数据会清空当前数据，确定继续？')) return;
+  const now = Date.now();
+  const demo = [
+    { name:'王建国', phone:'138****6789', wechat:'wangjianguo_wx', destination:'三亚', source:'抖音直播', note:'家庭出游，带老人和小孩，关注亲子设施', status:0, lastActionTime:now-3600000, createdAt:now-1800000 },
+    { name:'李雪', phone:'139****8901', wechat:'lixue_travel', destination:'云南', source:'抖音直播', note:'闺蜜出游，喜欢拍照打卡，预算较宽松', status:1, lastActionTime:now-86400000, createdAt:now-259200000 },
+    { name:'张伟', phone:'137****4567', wechat:'zw_zhang', destination:'日本', source:'抖音短视频', note:'夫妻纪念日旅行，对住宿有较高要求', status:2, lastActionTime:now-172800000, createdAt:now-432000000 },
+    { name:'刘芳', phone:'136****2345', wechat:'liufang88', destination:'桂林', source:'微信转介绍', note:'退休老人团，3位老人同行，对价格敏感', status:3, lastActionTime:now-259200000, createdAt:now-604800000 },
+    { name:'陈明', phone:'135****0123', wechat:'chenming_vip', destination:'泰国', source:'抖音直播', note:'公司团建，20人左右，需要定制方案', status:4, lastActionTime:now-345600000, createdAt:now-864000000 },
+    { name:'赵丽', phone:'133****8901', wechat:'zhaoli_love', destination:'三亚', source:'老客户复购', note:'去年跟过团，满意度高，今年带朋友再来', status:5, lastActionTime:now-432000000, createdAt:now-1209600000, convertedAt:now-604800000 },
+    { name:'孙强', phone:'132****5678', wechat:'sunqiang_2024', destination:'西藏', source:'抖音直播', note:'摄影爱好者，关注拍摄点位和最佳季节', status:6, lastActionTime:now-864000000, createdAt:now-2592000000, convertedAt:now-1728000000 },
+    { name:'周敏', phone:'131****3456', wechat:'zhoumin_min', destination:'欧洲', source:'抖音直播', note:'蜜月旅行，预算充足，注重浪漫体验', status:7, lastActionTime:now-950400000, createdAt:now-3456000000, convertedAt:now-2592000000 },
+  ];
+  appData = { customers:[], nextId:1 };
+  demo.forEach(d=>{
+    const c = { id:appData.nextId++, ...d, history:[], followupNote:'' };
+    addHistory(c, '客户创建（演示数据）');
+    if (c.status >= 1) addHistory(c, `首次联系完成`);
+    if (c.status >= 2) addHistory(c, `需求挖掘完成，确认意向${d.destination}`);
+    if (c.status >= 3) addHistory(c, `客户支付定金`);
+    if (c.status >= 4) addHistory(c, `定制方案已发送`);
+    if (c.status >= 5) addHistory(c, `签约成功！`);
+    if (c.status >= 6) addHistory(c, `客户已出发`);
+    if (c.status >= 7) addHistory(c, `回访完成，客户满意度高`);
+    appData.customers.push(c);
+  });
+  saveData();
+  render();
+  toast('演示数据已加载！');
+}
+
+// ============ Init ============
+function init() {
+  loadData();
+  const hash = window.location.hash.replace('#','');
+  if (hash.startsWith('customers-')) {
+    currentTab = 'customers';
+  } else if (['dashboard','customers','scripts','stats'].includes(hash)) {
+    currentTab = hash;
+  }
+  render();
+}
+
+window.addEventListener('hashchange', ()=>{
+  const hash = window.location.hash.replace('#','');
+  if (hash.startsWith('customers-')) {
+    currentTab = 'customers';
+    render();
+  } else if (['dashboard','customers','scripts','stats'].includes(hash)) {
+    currentTab = hash;
+    render();
+  }
+});
+
+init();
+</script>
+</body>
+</html>
