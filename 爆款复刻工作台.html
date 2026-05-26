@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>爆款复刻工作台</title>
+<style>
+:root {
+  --bg:#f5f6fa; --card:#fff; --primary:#4f6ef7; --primary-light:#eef1ff;
+  --danger:#e74c3c; --warning:#f39c12; --success:#27ae60;
+  --text:#2c3e50; --text-secondary:#7f8c8d; --border:#e8ecf1;
+  --shadow:0 2px 12px rgba(0,0,0,0.06); --radius:10px;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif; background:var(--bg); color:var(--text); line-height:1.6; }
+.app { max-width:900px; margin:0 auto; padding:16px; }
+
+.header { background:var(--card); padding:16px 20px; border-radius:var(--radius); box-shadow:var(--shadow); margin-bottom:16px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; }
+.header h1 { font-size:18px; color:var(--primary); }
+.route-select { display:flex; gap:6px; }
+.route-select button { padding:6px 14px; border:1px solid var(--border); background:var(--card); border-radius:6px; cursor:pointer; font-size:13px; transition:0.2s; }
+.route-select button.active { background:var(--primary); color:#fff; border-color:var(--primary); }
+.route-select button:hover:not(.active) { background:var(--primary-light); }
+
+.card { background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow); padding:20px; margin-bottom:16px; }
+.card h2 { font-size:15px; margin-bottom:4px; color:var(--primary); }
+.card .subtitle { font-size:12px; color:var(--text-secondary); margin-bottom:14px; }
+
+.form-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px; }
+.form-group { margin-bottom:10px; }
+.form-group label { display:block; font-size:12px; font-weight:500; margin-bottom:4px; }
+.form-group input, .form-group textarea, .form-group select { width:100%; padding:8px 10px; border:1px solid var(--border); border-radius:6px; font-size:13px; font-family:inherit; transition:0.2s; }
+.form-group textarea { resize:vertical; min-height:50px; }
+.form-group input:focus, .form-group textarea:focus, .form-group select:focus { outline:none; border-color:var(--primary); box-shadow:0 0 0 3px rgba(79,110,247,0.1); }
+
+.hook-type { display:flex; gap:4px; flex-wrap:wrap; margin-bottom:10px; }
+.hook-type button { padding:5px 10px; border:1px solid var(--border); background:var(--card); border-radius:4px; cursor:pointer; font-size:11px; }
+.hook-type button.sel { background:var(--primary); color:#fff; border-color:var(--primary); }
+
+.pattern-box { background:var(--primary-light); border-radius:8px; padding:12px; margin-bottom:12px; font-size:13px; }
+.pattern-box h4 { font-size:13px; margin-bottom:6px; color:var(--primary); }
+.pattern-row { display:flex; gap:6px; flex-wrap:wrap; }
+.pattern-chip { padding:6px 12px; border:1px solid var(--border); background:#fff; border-radius:6px; cursor:pointer; font-size:12px; transition:0.2s; }
+.pattern-chip:hover { border-color:var(--primary); background:var(--primary-light); }
+.pattern-chip.sel { background:var(--primary); color:#fff; border-color:var(--primary); }
+
+.output-box { background:#f9fafb; border:1px solid var(--border); border-radius:8px; padding:14px; font-size:13px; white-space:pre-wrap; min-height:80px; margin-top:8px; line-height:1.8; }
+.output-box.empty { color:var(--text-secondary); text-align:center; padding:30px; }
+
+.btn { padding:8px 16px; border:none; border-radius:6px; cursor:pointer; font-size:12px; font-weight:500; transition:0.2s; }
+.btn-primary { background:var(--primary); color:#fff; }
+.btn-primary:hover { opacity:0.9; }
+.btn-success { background:var(--success); color:#fff; }
+.btn-outline { background:#fff; color:var(--primary); border:1px solid var(--primary); }
+
+.tabs { display:flex; gap:4px; margin-bottom:16px; }
+.tabs button { flex:1; padding:8px 12px; border:1px solid var(--border); background:var(--card); border-radius:8px; cursor:pointer; font-size:12px; font-weight:500; color:var(--text-secondary); transition:0.2s; }
+.tabs button.active { background:var(--primary); color:#fff; }
+
+.script-table { width:100%; border-collapse:collapse; font-size:12px; margin-top:8px; }
+.script-table th { background:var(--primary-light); padding:8px; text-align:left; font-weight:500; }
+.script-table td { padding:8px; border-bottom:1px solid var(--border); vertical-align:top; }
+.script-table .shot-num { width:30px; color:var(--primary); font-weight:600; }
+
+.checklist { list-style:none; padding:0; }
+.checklist li { padding:6px 0; border-bottom:1px solid var(--border); font-size:13px; display:flex; align-items:flex-start; gap:8px; }
+.checklist li:last-child { border-bottom:none; }
+.checklist input[type=checkbox] { margin-top:2px; }
+
+.tag-group { display:flex; gap:4px; flex-wrap:wrap; margin-top:6px; }
+.tag { padding:3px 8px; border-radius:4px; font-size:11px; background:var(--bg); color:var(--text-secondary); }
+.tag.hot { background:#fff3cd; color:var(--warning); }
+.tag.must { background:#e8f5e9; color:var(--success); }
+
+.copy-btn { font-size:11px; padding:4px 10px; margin-left:6px; }
+
+@media (max-width:600px) {
+  .form-row { grid-template-columns:1fr; }
+  .header { flex-direction:column; align-items:flex-start; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+<div class="header">
+  <h1>爆款复刻工作台</h1>
+  <div class="route-select">
+    <button class="active" data-route="jiuzhaigou">九寨沟</button>
+    <button data-route="quanzhou">泉州</button>
+    <button data-route="pingtan">平潭</button>
+    <button data-route="custom">自定义</button>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="active" data-tab="step1">1. 拆解竞品</button>
+  <button data-tab="step2">2. 结构映射</button>
+  <button data-tab="step3">3. 生成脚本</button>
+  <button data-tab="step4">4. 发布清单</button>
+</div>
+
+<!-- Step 1: Deconstruction -->
+<div class="card" id="step1">
+  <h2>第一步：快速拆解（5分钟）</h2>
+  <p class="subtitle">只抓 7 个核心维度，不需要逐帧分析</p>
+
+  <div class="form-group">
+    <label>竞品视频链接</label>
+    <input type="text" id="srcUrl" placeholder="粘贴 Douyin/小红书链接，方便以后回溯">
+  </div>
+
+  <div class="form-group">
+    <label>1. 钩子类型（前3秒用什么抓人？）</label>
+    <div class="hook-type" id="hookType">
+      <button data-hook="h1">视觉冲击</button>
+      <button data-hook="h2">悬念提问</button>
+      <button data-hook="h3">前后对比</button>
+      <button data-hook="h4">极致体验</button>
+      <button data-hook="h5">情感共鸣</button>
+    </div>
+    <textarea id="hookNote" placeholder="具体描述：前3秒画面+文字是什么？" rows="2"></textarea>
+  </div>
+
+  <div class="form-row">
+    <div class="form-group">
+      <label>2. 分镜数量</label>
+      <input type="number" id="shotCount" placeholder="几个画面切换？" min="1" max="20">
+    </div>
+    <div class="form-group">
+      <label>3. 视频总时长（秒）</label>
+      <input type="number" id="totalDuration" placeholder="15? 30? 60?" min="1" max="300">
+    </div>
+  </div>
+
+  <div class="form-group">
+    <label>4. 文案结构（说了什么？开头→中间→结尾）</label>
+    <textarea id="copyStructure" rows="3" placeholder="第一句：&#10;中间：&#10;最后一句："></textarea>
+  </div>
+
+  <div class="form-group">
+    <label>5. 画面类型（视频里出现了什么画面？）</label>
+    <textarea id="shotTypes" rows="2" placeholder="航拍/特写/人物出镜/延时/文字叠加/慢动作..."></textarea>
+  </div>
+
+  <div class="form-row">
+    <div class="form-group">
+      <label>6. BGM 风格</label>
+      <input type="text" id="bgmStyle" placeholder="激昂/舒缓/卡点/氛围/纯音乐">
+    </div>
+    <div class="form-group">
+      <label>7. 评论区高赞 Top 3</label>
+      <textarea id="topComments" rows="2" placeholder="评论区在聊什么？这是选题金矿"></textarea>
+    </div>
+  </div>
+
+  <button class="btn btn-primary" onclick="nextTab('step2')">拆完了，进入映射 →</button>
+</div>
+
+<!-- Step 2: Mapping -->
+<div class="card" id="step2" style="display:none">
+  <h2>第二步：结构映射（5分钟）</h2>
+  <p class="subtitle">把竞品的骨架抽出来，换上你的产品血肉</p>
+
+  <div class="pattern-box">
+    <h4>选择叙事模式</h4>
+    <div style="margin-bottom:8px">
+      <strong>钩子：</strong>
+      <div class="pattern-row" id="hookPatterns"></div>
+    </div>
+    <div style="margin-bottom:8px">
+      <strong>主体：</strong>
+      <div class="pattern-row" id="bodyPatterns"></div>
+    </div>
+    <div>
+      <strong>结尾：</strong>
+      <div class="pattern-row" id="endingPatterns"></div>
+    </div>
+  </div>
+
+  <div id="mappingTable">
+    <div class="form-group">
+      <label>竞品钩子 → 你的钩子</label>
+      <textarea id="mapHook" rows="2" placeholder="竞品："看似欧洲，实则泉州" → 你的："看似冰岛黑沙滩，实则平潭""></textarea>
+    </div>
+    <div id="shotMappings"></div>
+    <button class="btn btn-outline" onclick="addShotMapping()" style="margin-bottom:12px">+ 添加镜头映射</button>
+    <div class="form-group">
+      <label>竞品结尾 → 你的结尾</label>
+      <textarea id="mapEnding" rows="2" placeholder="竞品怎么收尾的 → 你换成什么收尾"></textarea>
+    </div>
+  </div>
+
+  <button class="btn btn-outline" onclick="nextTab('step1')">← 回上一步</button>
+  <button class="btn btn-primary" onclick="nextTab('step3')">映射完了，生成脚本 →</button>
+</div>
+
+<!-- Step 3: Script Output -->
+<div class="card" id="step3" style="display:none">
+  <h2>第三步：拍摄脚本</h2>
+  <p class="subtitle">直接拿去用——分镜表 + AI 提示词 + 剪辑指南</p>
+
+  <h3 style="font-size:14px;margin-bottom:8px">分镜脚本</h3>
+  <table class="script-table" id="scriptTable">
+    <thead><tr><th>#</th><th>画面描述</th><th>文案/旁白</th><th>BGM</th><th>时长</th></tr></thead>
+    <tbody id="scriptBody"></tbody>
+  </table>
+  <button class="btn btn-outline" onclick="addScriptRow()" style="margin-top:8px">+ 添加镜号</button>
+
+  <h3 style="font-size:14px;margin:16px 0 8px">即梦 AI 提示词（如需 AI 生成画面）</h3>
+  <div class="form-group">
+    <label>画面提示词模板</label>
+    <textarea id="aiPrompt" rows="3" placeholder="[镜头类型] + [主体] + [环境] + [光线/氛围] + [运镜方式] + [画幅]&#10;例：大远景航拍 + 五花海碧蓝湖水 + 秋日彩林环绕 + 金色阳光穿云 + 缓慢前推 + 9:16竖屏"></textarea>
+  </div>
+  <div>
+    <span style="font-size:12px;color:var(--text-secondary)">关键词库：</span>
+    <div class="tag-group">
+      <span class="tag">航拍大远景</span><span class="tag">超广角</span><span class="tag">特写</span>
+      <span class="tag">金色阳光</span><span class="tag">逆光暖调</span><span class="tag">晨雾</span>
+      <span class="tag">电影感</span><span class="tag">仙境感</span><span class="tag">治愈系</span>
+      <span class="tag">缓慢前推</span><span class="tag">横移</span><span class="tag">环绕</span>
+      <span class="tag">9:16竖屏</span><span class="tag">水面波光</span><span class="tag">云朵飘动</span>
+    </div>
+  </div>
+
+  <h3 style="font-size:14px;margin:16px 0 8px">剪映剪辑指南</h3>
+  <textarea id="editingGuide" rows="2" placeholder="素材来源、剪辑节奏、转场效果、文字叠加..."></textarea>
+
+  <div style="margin-top:12px">
+    <button class="btn btn-outline" onclick="nextTab('step2')">← 回上一步</button>
+    <button class="btn btn-success" onclick="copyScript()">复制完整脚本</button>
+    <button class="btn btn-primary" onclick="nextTab('step4')">到发布清单 →</button>
+  </div>
+</div>
+
+<!-- Step 4: Publishing -->
+<div class="card" id="step4" style="display:none">
+  <h2>第四步：发布清单</h2>
+  <p class="subtitle">发完不是结束，评论区运营才是</p>
+
+  <div class="form-group">
+    <label>Douyin 标题</label>
+    <textarea id="douyinTitle" rows="2" placeholder="选一个模板或自己写"></textarea>
+  </div>
+  <div style="font-size:12px;color:var(--text-secondary);margin-bottom:8px">标题模板：</div>
+  <div class="tag-group" style="margin-bottom:12px">
+    <span class="tag" onclick="fillTitle('A')" style="cursor:pointer">A. 好奇型：以为[旧印象]，直到我去了[线路]</span>
+    <span class="tag" onclick="fillTitle('B')" style="cursor:pointer">B. 攻略型：[线路]到底怎么玩？</span>
+    <span class="tag" onclick="fillTitle('C')" style="cursor:pointer">C. 情感型：如果你也[心情]，一定要来[线路]</span>
+  </div>
+
+  <div class="form-group">
+    <label>话题标签</label>
+    <div class="tag-group" id="tagPool"></div>
+    <textarea id="selectedTags" rows="2" placeholder="点击上面标签选择，或手动输入"></textarea>
+  </div>
+
+  <div class="form-group">
+    <label>评论区运营（发完立刻自己发2-3条）</label>
+    <textarea id="commentOps" rows="3" placeholder="1. 引导留资：想知道具体行程和报价的朋友私信我~&#10;2. 互动提问：大家觉得几月份去最合适？&#10;3. 回复高赞评论"></textarea>
+  </div>
+
+  <div>
+    <h3 style="font-size:14px;margin-bottom:8px">发布检查清单</h3>
+    <ul class="checklist">
+      <li><input type="checkbox"> 视频时长 15-60 秒（最佳区间）</li>
+      <li><input type="checkbox"> 前 3 秒有明确钩子</li>
+      <li><input type="checkbox"> 标题含线路关键词（方便搜索）</li>
+      <li><input type="checkbox"> 至少 3 个话题标签</li>
+      <li><input type="checkbox"> BGM 不侵权（剪映/抖音自带音乐）</li>
+      <li><input type="checkbox"> 评论区已发引导话术</li>
+      <li><input type="checkbox"> 视频/文案里有引导私信的动作</li>
+    </ul>
+  </div>
+
+  <div style="margin-top:12px">
+    <button class="btn btn-outline" onclick="nextTab('step3')">← 回上一步</button>
+    <button class="btn btn-success" onclick="copyAll()">复制全部产出</button>
+  </div>
+</div>
+
+</div>
+
+<script>
+// Route data
+const routes = {
+  jiuzhaigou: {
+    name:'九寨沟', tags:['#九寨沟','#四川旅游','#人间瑶池','#黄龙','#成都周边游'],
+    hook:'大远景航拍+五花海碧蓝湖水+秋日彩林+金色阳光穿云',
+    keywords:['五花海','碧水彩林','雪山海子','人间瑶池','藏族村寨','长海晨雾','牦牛肉']
+  },
+  quanzhou: {
+    name:'泉州', tags:['#泉州旅游','#泉州攻略','#簪花','#泉州美食','#福建旅游'],
+    hook:'西街航拍+开元寺双塔+簪花女特写+闽南红砖古厝',
+    keywords:['西街','开元寺','簪花','洛伽寺','面线糊','木偶戏','闽南古厝']
+  },
+  pingtan: {
+    name:'平潭', tags:['#平潭岛','#蓝眼泪','#平潭旅游','#最美环岛路','#福建旅游'],
+    hook:'海上风车田航拍+蓝眼泪荧光海浪+环岛路车行+日落金黄色海面',
+    keywords:['风车田','蓝眼泪','坛南湾','北港村','环岛路','海上日出','荧光海']
+  },
+  custom: {
+    name:'自定义', tags:[], hook:'', keywords:[]
+  }
+};
+
+let currentRoute = 'jiuzhaigou';
+let scriptRowCount = 0;
+
+// Route switching
+document.querySelectorAll('.route-select button').forEach(btn => {
+  btn.addEventListener('click', function(){
+    document.querySelectorAll('.route-select button').forEach(b=>b.classList.remove('active'));
+    this.classList.add('active');
+    currentRoute = this.dataset.route;
+    updateTagPool();
+    updatePatternRecommendation();
+  });
+});
+
+// Tab switching
+function nextTab(tabId) {
+  document.querySelectorAll('.tabs button').forEach(b=>b.classList.remove('active'));
+  document.querySelector(`.tabs button[data-tab="${tabId}"]`).classList.add('active');
+  ['step1','step2','step3','step4'].forEach(id => {
+    document.getElementById(id).style.display = id===tabId ? '' : 'none';
+  });
+  if(tabId==='step3') updateScriptPreview();
+}
+
+document.querySelectorAll('.tabs button').forEach(btn => {
+  btn.addEventListener('click', function(){
+    nextTab(this.dataset.tab);
+  });
+});
+
+// Hook type selection
+document.querySelectorAll('#hookType button').forEach(btn => {
+  btn.addEventListener('click', function(){
+    document.querySelectorAll('#hookType button').forEach(b=>b.classList.remove('sel'));
+    this.classList.add('sel');
+  });
+});
+
+// Pattern chips
+function initPatterns() {
+  const hooks = [
+    {id:'h1',name:'视觉冲击',desc:'绝美风景直接怼脸'},
+    {id:'h2',name:'悬念提问',desc:'"你相信这是在中国吗？"'},
+    {id:'h3',name:'前后对比',desc:'几年前vs现在'},
+    {id:'h4',name:'极致体验',desc:'悬崖早餐、海底漫步'},
+    {id:'h5',name:'情感共鸣',desc:'独旅、带父母、失恋'}
+  ];
+  const bodies = [
+    {id:'b1',name:'时间流逝',desc:'日出→白天→黄昏→夜景'},
+    {id:'b2',name:'探索发现',desc:'出发→途中→发现→惊叹'},
+    {id:'b3',name:'美食之旅',desc:'寻找→制作→品尝→回味'},
+    {id:'b4',name:'挑战任务',desc:'挑战→困难→突破→成功'},
+    {id:'b5',name:'故事叙述',desc:'起因→经过→高潮→结局'}
+  ];
+  const endings = [
+    {id:'e1',name:'留悬念',desc:'下一站去哪？'},
+    {id:'e2',name:'引导行动',desc:'快带上朋友来吧'},
+    {id:'e3',name:'情感升华',desc:'旅行的意义不在于目的地'},
+    {id:'e4',name:'互动提问',desc:'评论区告诉我'},
+    {id:'e5',name:'总结推荐',desc:'这里值得来三次'}
+  ];
+
+  function renderChips(container, items, prefix) {
+    items.forEach(item => {
+      const chip = document.createElement('span');
+      chip.className = 'pattern-chip';
+      chip.textContent = item.name;
+      chip.title = item.desc;
+      chip.dataset.id = item.id;
+      chip.addEventListener('click', function(){
+        this.parentElement.querySelectorAll('.pattern-chip').forEach(c=>c.classList.remove('sel'));
+        this.classList.add('sel');
+      });
+      container.appendChild(chip);
+    });
+  }
+  renderChips(document.getElementById('hookPatterns'), hooks);
+  renderChips(document.getElementById('bodyPatterns'), bodies);
+  renderChips(document.getElementById('endingPatterns'), endings);
+
+  // Default selections for 九寨沟
+  selectPattern('hookPatterns', 'h1');
+  selectPattern('bodyPatterns', 'b1');
+  selectPattern('endingPatterns', 'e2');
+}
+
+function selectPattern(containerId, id) {
+  const chips = document.querySelectorAll(`#${containerId} .pattern-chip`);
+  chips.forEach(c => c.classList.remove('sel'));
+  chips.forEach(c => { if(c.dataset.id === id) c.classList.add('sel'); });
+}
+
+function updatePatternRecommendation() {
+  const recs = {
+    jiuzhaigou: {hook:'h1',body:'b1',ending:'e2'},
+    quanzhou: {hook:'h2',body:'b5',ending:'e5'},
+    pingtan: {hook:'h5',body:'b2',ending:'e4'},
+    custom: {hook:'h1',body:'b1',ending:'e4'}
+  };
+  const r = recs[currentRoute] || recs.custom;
+  selectPattern('hookPatterns', r.hook);
+  selectPattern('bodyPatterns', r.body);
+  selectPattern('endingPatterns', r.ending);
+}
+
+// Update tag pool based on route
+function updateTagPool() {
+  const route = routes[currentRoute];
+  const pool = document.getElementById('tagPool');
+  const allTags = [...(route.tags||[]), '#旅行推荐','#Douyin旅行','#治愈系风景','#旅行日记','#去看世界'];
+  pool.innerHTML = allTags.map(t => {
+    let cls = 'tag';
+    if(['#旅行推荐','#Douyin旅行'].includes(t)) cls += ' must';
+    return `<span class="${cls}" style="cursor:pointer" onclick="toggleTag(this,'${t}')">${t}</span>`;
+  }).join('');
+}
+
+let selectedTags = [];
+function toggleTag(el, tag) {
+  if(selectedTags.includes(tag)) {
+    selectedTags = selectedTags.filter(t=>t!==tag);
+    el.style.opacity = '0.5';
+  } else {
+    selectedTags.push(tag);
+    el.style.opacity = '1';
+    el.style.background = 'var(--primary)';
+    el.style.color = '#fff';
+  }
+  document.getElementById('selectedTags').value = selectedTags.join(' ');
+}
+
+// Shot mappings
+let shotMappingCount = 0;
+function addShotMapping() {
+  shotMappingCount++;
+  const div = document.createElement('div');
+  div.className = 'form-row';
+  div.id = `shotMap${shotMappingCount}`;
+  div.innerHTML = `
+    <div class="form-group">
+      <label>竞品镜头${shotMappingCount}</label>
+      <textarea rows="2" placeholder="竞品这个镜头是什么画面？"></textarea>
+    </div>
+    <div class="form-group">
+      <label>→ 你的镜头${shotMappingCount}</label>
+      <textarea rows="2" placeholder="你用什么画面替换？可用即梦生成/素材库/实拍"></textarea>
+    </div>
+  `;
+  document.getElementById('shotMappings').appendChild(div);
+}
+// Init with 3 rows
+for(let i=0;i<3;i++) addShotMapping();
+
+// Script table
+function addScriptRow() {
+  scriptRowCount++;
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td class="shot-num">${scriptRowCount}</td>
+    <td contenteditable="true">[画面描述]</td>
+    <td contenteditable="true">[文案/旁白]</td>
+    <td contenteditable="true">[BGM节点]</td>
+    <td contenteditable="true">[秒]</td>
+  `;
+  document.getElementById('scriptBody').appendChild(tr);
+}
+// Init with 5 rows
+for(let i=0;i<5;i++) addScriptRow();
+
+function updateScriptPreview() {
+  // Update the AI prompt with route-specific keywords
+  const route = routes[currentRoute];
+  const promptEl = document.getElementById('aiPrompt');
+  if(!promptEl.value) {
+    promptEl.value = `[镜头类型] + [${(route.keywords||[]).slice(0,3).join(']/[')}] + [光线/氛围] + [运镜] + 9:16竖屏`;
+  }
+}
+
+// Copy functions
+function copyScript() {
+  const rows = document.querySelectorAll('#scriptBody tr');
+  let text = '=== 分镜脚本 ===\n';
+  rows.forEach(row => {
+    const cells = row.querySelectorAll('td');
+    if(cells.length >= 5) {
+      text += `镜${cells[0].textContent} | ${cells[1].textContent} | ${cells[2].textContent} | ${cells[3].textContent} | ${cells[4].textContent}\n`;
+    }
+  });
+  text += '\n=== AI提示词 ===\n' + document.getElementById('aiPrompt').value;
+  text += '\n\n=== 剪辑指南 ===\n' + document.getElementById('editingGuide').value;
+  navigator.clipboard.writeText(text).then(()=>alert('已复制到剪贴板'));
+}
+
+function copyAll() {
+  let text = '=== 抖音标题 ===\n' + document.getElementById('douyinTitle').value;
+  text += '\n\n=== 话题标签 ===\n' + document.getElementById('selectedTags').value;
+  text += '\n\n=== 评论区运营 ===\n' + document.getElementById('commentOps').value;
+  navigator.clipboard.writeText(text).then(()=>alert('发布清单已复制到剪贴板'));
+}
+
+function fillTitle(type) {
+  const r = routes[currentRoute];
+  const titles = {
+    'A': `以为[旧印象]，直到我去了${r.name}`,
+    'B': `${r.name}到底怎么玩？这条视频告诉你`,
+    'C': `如果你也觉得[某种心情]，一定要来${r.name}看看`
+  };
+  document.getElementById('douyinTitle').value = titles[type] || '';
+}
+
+// Init
+initPatterns();
+updateTagPool();
+</script>
+</body>
+</html>
